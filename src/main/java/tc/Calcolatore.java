@@ -48,7 +48,7 @@ public class Calcolatore {
 		livelliCarte.put(EnumRacchette.L_entroterra,8);
 		livelliCarte.put(EnumRacchette.La_pantera,10);
 		livelliCarte.put(EnumRacchette.Il_samurai,11);
-		livelliCarte.put(EnumRacchette.Il_martello,8);
+		livelliCarte.put(EnumRacchette.Il_martello,9);
 		
 		livelliCarte.put(EnumGrip.Il_guerriero,11);
 		livelliCarte.put(EnumGrip.L_artiglio,8);
@@ -72,9 +72,10 @@ public class Calcolatore {
 		livelliCarte.put(EnumPolsino.Il_pappagallo_ara,7);		
 		livelliCarte.put(EnumPolsino.Il_koi,8);		
 		livelliCarte.put(EnumPolsino.L_orso_Kodiac,6);		
+		livelliCarte.put(EnumPolsino.Il_gladiatore,4);		
 		
 		livelliCarte.put(EnumNutrizione.Proteina_magra,8);		
-		livelliCarte.put(EnumNutrizione.Idratazione_aumentata,10);		
+		livelliCarte.put(EnumNutrizione.Idratazione_aumentata,11);		
 		livelliCarte.put(EnumNutrizione.Macrobiotico,8);		
 		livelliCarte.put(EnumNutrizione.Dieta_vegana,9);		
 		livelliCarte.put(EnumNutrizione.Dieta_keto,8);		
