@@ -4,6 +4,10 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +33,10 @@ import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 
@@ -36,22 +44,32 @@ public class Calcolatore {
 
 	
 	private void init() {
-		iMaxLivello=12;
+		iMaxLivello=22;
 
-		minAgilita=72;
+		minAgilita=10;
 		minResistenza=1;
 		minServizio=1;
 		minVolley=-1;
-		minDiritto=67;
-		minRovescio=67;
+		minDiritto=10;
+		minRovescio=10;
 
-//		personaggiAmmessi=Arrays.asList(EnumPersonaggi.Jonah);
+//		personaggiAmmessi=Arrays.asList(EnumPersonaggi.Abeke);
 //		allenamentiAmmessi=Arrays.asList(EnumAllenamento.Fascia_di_resistenza);
 //		gripAmmessi=Arrays.asList(EnumGrip.Il_machete);
 //		nutrizioniAmmesse=Arrays.asList(EnumNutrizione.Carico_di_carboidrati);
 //		polsiniAmmessi=Arrays.asList(EnumPolsino.Il_razzo);
 //		racchetteAmmesse=Arrays.asList(EnumRacchette.La_pantera);
 //		scarpeAmmesse=Arrays.asList(EnumScarpe.L_incudine);
+
+//		personaggiEsclusi=Arrays.asList(EnumPersonaggi.Kaito, EnumPersonaggi.Omar, EnumPersonaggi.Abeke
+//				, EnumPersonaggi.Anton, EnumPersonaggi.Diana, EnumPersonaggi.Florence, EnumPersonaggi.Hope, EnumPersonaggi.Jonah
+//				, EnumPersonaggi.Leo, EnumPersonaggi.Victoria, EnumPersonaggi.Luc, EnumPersonaggi.Mei_Li );
+//		allenamentiEsclusi=Arrays.asList(EnumAllenamento.Fascia_di_resistenza);
+//		gripEsclusi=Arrays.asList(EnumGrip.Il_machete);
+//		nutrizioniEscluse=Arrays.asList(EnumNutrizione.Carico_di_carboidrati);
+//		polsiniEsclusi=Arrays.asList(EnumPolsino.Il_razzo);
+//		racchetteEscluse=Arrays.asList(EnumRacchette.Il_martello);
+//		scarpeEscluse=Arrays.asList(EnumScarpe.L_incudine);
 		
 		
 		livelliCarte.put(EnumPersonaggi.Jonah, 11);
@@ -176,6 +194,13 @@ public class Calcolatore {
 									if (racchetteAmmesse != null &&  !racchetteAmmesse.contains(racchetta.getOggetto())) continue;
 									if (scarpeAmmesse != null &&  !scarpeAmmesse.contains(scarpa.getOggetto())) continue;
 									
+									if (personaggiEsclusi != null &&  personaggiEsclusi.contains(personaggio.getOggetto())) continue;
+									if (gripEsclusi != null &&  gripEsclusi.contains(grip.getOggetto())) continue;
+									if (allenamentiEsclusi != null &&  allenamentiEsclusi.contains(allenamento.getOggetto())) continue;
+									if (nutrizioniEscluse != null &&  nutrizioniEscluse.contains(nutrizione.getOggetto())) continue;
+									if (polsiniEsclusi != null &&  polsiniEsclusi.contains(polsino.getOggetto())) continue;
+									if (racchetteEscluse != null &&  racchetteEscluse.contains(racchetta.getOggetto())) continue;
+									if (scarpeEscluse != null &&  scarpeEscluse.contains(scarpa.getOggetto())) continue;
 									
 									Map<String,Object> caratteristichePersonaggio = getMaxCaratteristiche(personaggio.getCaratteristiche(),personaggio.getOggetto());
 									Map<String,Object> caratteristicheRacchetta = getMaxCaratteristiche(racchetta.getCaratteristiche(),racchetta.getOggetto());
@@ -318,6 +343,15 @@ public class Calcolatore {
 	List<EnumPolsino> polsiniAmmessi;
 	List<EnumRacchette> racchetteAmmesse;
 	List<EnumScarpe> scarpeAmmesse;
+
+	List<EnumPersonaggi> personaggiEsclusi;
+	List<EnumAllenamento> allenamentiEsclusi;
+	List<EnumGrip> gripEsclusi;
+	List<EnumNutrizione> nutrizioniEscluse;
+	List<EnumPolsino> polsiniEsclusi;
+	List<EnumRacchette> racchetteEscluse;
+	List<EnumScarpe> scarpeEscluse;
+	
 	Map<EnumOggetti,Integer> livelliCarte=new HashMap();
 	Integer iMaxLivello;
 	private  final String HTTPS_TENNIS_CLASH_FANDOM_COM = "https://tennis-clash.fandom.com";
@@ -395,7 +429,7 @@ public class Calcolatore {
 	}
 	
 	private  void navigaCategoria(String category) throws Exception {
-		String http = getHTTP(HTTPS_TENNIS_CLASH_FANDOM_COM + "/wiki/Category:" + category);
+		String http = cachGetHTTP(category + ".json", HTTPS_TENNIS_CLASH_FANDOM_COM + "/wiki/Category:" + category);
 		Document doc = Jsoup.parse(http);
 		Elements elements = doc.getElementsByClass("category-page__members");
 		List<Node> childNodes = elements.get(0).childNodes();
@@ -416,7 +450,7 @@ public class Calcolatore {
 	private  void navigaPage(String category, String page) throws Exception {
 		try {
 			String obj=page.substring(6);
-			String http = getHTTP(HTTPS_TENNIS_CLASH_FANDOM_COM + page);
+			String http = cachGetHTTP(obj + ".json",HTTPS_TENNIS_CLASH_FANDOM_COM + page);
 			Document doc = Jsoup.parse(http);//, StandardCharsets.UTF_8.toString()
 			Elements elements = doc.getElementsByClass("article-table");
 			
@@ -492,6 +526,89 @@ public class Calcolatore {
 		}
 	}
 
+	private static final String ROOT_FILE = "/1/tc";
+	private static final boolean USA_CACHE = true;
+	private  ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+	
+	
+	private  String toJson(Object o) {
+		try {
+			byte[] data = mapper.writeValueAsBytes(o);
+			return new String(data);// , Charsets.ISO_8859_1
+		} catch (JsonProcessingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private  Map<String, Object> jsonToMap(String json) {
+		try {
+			return mapper.readValue(json, new TypeReference<Map<String, Object>>() {
+			});
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	private  String cachGetHTTP(String nomeFile, String url) throws Exception {
+		String directory = ROOT_FILE +  "/";
+		Path pathFile = Paths.get(directory + nomeFile);
+		if (Files.exists(pathFile) && USA_CACHE) {
+			try {
+				List<String> readAllLines = Files.readAllLines(pathFile, Charset.defaultCharset());
+				StringBuilder sb = new StringBuilder();
+				for (String linea : readAllLines) {
+					sb.append(linea);
+				}
+				return sb.toString();
+			} catch (Exception e)
+			{
+				e.printStackTrace(System.err);
+				throw new RuntimeException("Errore in " + nomeFile);
+			}
+		} else {
+			if (url == null) {
+				throw new RuntimeException("File non esistente: " + nomeFile);
+			}
+			try {
+				Path pathDir = Paths.get(directory);
+				if (!Files.isDirectory(pathDir))
+				{
+					Files.createDirectories(pathDir);
+				}
+				Files.deleteIfExists(pathFile);
+				Map<String, String> h=new HashMap();
+				//				h.put("Cookie", COOKIE);
+				String s = getHTTP(url, h);
+				String sPretty="";
+				try {
+					sPretty = toJson(jsonToMap(s));
+				}
+				catch(Exception e ) {
+					try {
+						sPretty = toJson(jsonToList(s));
+					}
+					catch(Exception e2 ) {
+						sPretty=s;
+					}
+				}
+				Files.createFile(pathFile);
+				Files.write(pathFile, sPretty.getBytes());
+				return s;
+			} catch (Exception e)
+			{
+				e.printStackTrace(System.err);
+				throw new RuntimeException("Errore in " + url);
+			}
+		}
+	}
+	private  List<Map<String, Object>> jsonToList(String json) {
+		try {
+			return mapper.readValue(json, new TypeReference<List<Map<String, Object>>>() {
+			});
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
 	
 }
 
